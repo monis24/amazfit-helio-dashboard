@@ -32,8 +32,12 @@
 export type EpochSeconds = number;
 
 /** Minute-cadence (or coarser) HR sample. Missing minutes are ABSENT from the
- *  array, not zero — the wire's 254 "no reading" sentinel is stripped before
- *  this type is ever populated (a /db-mapper concern, not this file's). */
+ *  array, not zero — the wire's 254 "no reading" sentinel is kept in-band at
+ *  rest (db/schema.ts's hr_days.hr_minutes) and stripped when /hooks maps
+ *  the raw blob to this type; this file never sees a sentinel byte. Only 254
+ *  is a confirmed sentinel in this account's data — /hooks' mapper should
+ *  validate against a plausible bpm range, not just "not exactly 254" (see
+ *  db/schema.ts's hr_days comment). */
 export interface HrSample {
   readonly t: EpochSeconds;
   readonly bpm: number;

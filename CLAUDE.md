@@ -7,24 +7,60 @@ biometric data leaves the phone after initial sync.
 ## Stack
 
 - Expo (bare workflow), TypeScript strict mode — no `any`
-- Expo SQLite for persistence, MMKV for key-value state
-- react-native-wagmi-charts / Victory Native for charting
-- Jest for unit tests
+- Expo SQLite for persistence (built — `db/adapters/ExpoSqliteAdapter.ts`)
+- Auth tokens specifically use `expo-secure-store` (Keychain-backed, built —
+  `services/TokenStore.ts`), not MMKV — a correctness call from the Phase 0
+  OAuth checkpoint, not an oversight. MMKV is for other lightweight UI-level
+  key-value state Phase 3 introduces (not yet used — nothing needs it yet).
+- react-native-wagmi-charts / Victory Native for charting — still an open
+  choice between the two, not yet installed; Phase 3 should pick one based
+  on how well each handles the Gantt-style Sleep Hypnogram specifically
+  (the Continuous Vitals line chart and Cadence histogram are easy fits for
+  either).
+- Jest for unit tests (Node-side ts-jest so far; Phase 3 UI/component tests
+  will need `jest-expo` or equivalent, a separate config from the current
+  `jest.config.js`)
 
 ## Structure
+
+Built (Phases 0-2):
 
 ```
 /services   — cloud API ingestion, OAuth2 (ZeppApiService.ts)
 /engines    — local biometric computation (BiometricEngine.ts)
-/screens    — full screen views
-/components — reusable UI components
 /db         — SQLite schema and query layer
 /types      — strict TypeScript interfaces for all data schemas
 /scripts    — one-off Node/TS scripts, not part of the app bundle (Phase 0 discovery)
+```
+
+Not yet created — Phase 3 deliverables, described here so their intended
+job is settled before they exist:
+
+```
+/screens    — full screen views
+/components — reusable UI components
 /hooks      — orchestration: read /db, call /engines, expose view models to /screens.
               This is where impurity (DB reads, memoization) lives so /engines stays
               100% pure — screens never touch /db or /engines directly.
 ```
+
+Also not yet done, and part of Phase 3's real scope even though SPEC.md
+doesn't spell it out as a separate line item: there is no Expo app shell
+yet — no entry point, no `react`/`react-native`/`expo` app-level deps, no
+charting library installed, `tsconfig.json`/`jest.config.js` are still
+Node-side-only. Phase 3 starts with scaffolding the app, not with panel 1.
+
+## Architecture notes
+
+- **No `IBiometricProvider` abstraction.** Considered and rejected: a
+  provider-interface over `CloudZeppProvider`, anticipating a future
+  `BleZeppProvider`. Rejected as premature — only one real ingestion path
+  exists (cloud REST), no BLE work is planned, and the abstraction would
+  have shaped the SQLite schema around a hypothetical raw-binary-packet
+  case that doesn't exist. Revisit only if BLE ingestion becomes actual
+  scope, not hypothetical — see SPEC.md's Phase 3 BLE research note for
+  what that would actually require (a structurally separate ingestion path
+  with its own pairing/auth-key flow, not a drop-in second provider).
 
 ## Phases
 
@@ -74,7 +110,10 @@ not default to max effort as standing policy):
   formula to derive. See SPEC.md Phase 2.)
 - **After Phase 1, Phase 2, and Phase 3 each complete:** a review pass before
   moving to the next phase — confirm the phase matches the current plan and
-  catch integration drift early rather than only at final sign-off.
+  catch integration drift early rather than only at final sign-off. Done for
+  Phase 1 and Phase 2 (Phase 2's is separate from the During-Phase-2 formula
+  checkpoint above — that one only checks VO2 Max/HRR math, this one checks
+  the phase against the plan more broadly). Still pending for Phase 3.
 - **Before Phase 4 delivery:** end-to-end review of the full codebase.
 
 **Known risk:** the OAuth checkpoint touches auth-token extraction from a
@@ -99,10 +138,15 @@ Repo: github.com/monis24/amazfit-helio-dashboard (public).
 
 ## Build & test
 
-- Test: `npx jest`
-- Lint: `npx eslint . --ext .ts,.tsx`
-- Type-check: `npx tsc --noEmit`
-- Dev server: `npx expo start`
+- Test: `npx jest` (or `npm test`)
+- Lint: `npx eslint .` (or `npm run lint`) — ESLint 9 + typescript-eslint,
+  flat config in `eslint.config.js`. Pinned to ESLint 9, not 10: ESLint 10
+  requires a newer Node than this environment has and crashes formatting
+  any actual output (works fine, silently, only when there's nothing to
+  report — a real trap if the version drifts back up).
+- Type-check: `npx tsc --noEmit` (or `npm run typecheck`)
+- Dev server: `npx expo start` — not usable yet, no Expo app entry point
+  exists (see Structure above). Becomes real once Phase 3 scaffolds the app.
 
 ## Style
 

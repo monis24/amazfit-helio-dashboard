@@ -34,6 +34,14 @@ CREATE TABLE IF NOT EXISTS raw_payloads (
 
 -- One row per day per device source. hr_minutes is the decoded 1440-byte
 -- blob (sentinel 254 = no reading, kept in-band, never stripped at rest).
+-- byte[0] anchors to LOCAL_DATE'S OWN midnight (db/mappers/dayAnchor.ts's
+-- hrBlobAnchorUtc) -- empirically confirmed DIFFERENT from the sleep/step
+-- segment convention in this same file (segmentAnchorUtc, one day earlier).
+-- Do not assume the two conventions match; see hrBlobAnchorUtc's doc comment
+-- for the live-data cross-check that caught this. Only 254 was observed as
+-- a sentinel/junk byte in this account's synced data (no 0s/255s) -- a
+-- future account/firmware could differ, so treat "not in a plausible bpm
+-- range" as the real validity check, not just "not exactly 254".
 CREATE TABLE IF NOT EXISTS hr_days (
   local_date    TEXT NOT NULL,
   source        INTEGER NOT NULL,
