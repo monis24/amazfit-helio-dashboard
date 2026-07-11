@@ -1,0 +1,6 @@
+.env
+.env.local
+node_modules/
+scripts/discovery-output/
+data/
+.claude/settings.local.json

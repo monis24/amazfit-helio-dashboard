@@ -1,0 +1,26 @@
+{
+  "name": "amazfit-helio-dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "discover": "tsx scripts/discover.ts",
+    "sync-once": "tsx scripts/sync-once.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "expo-secure-store": "^57.0.0",
+    "expo-sqlite": "^57.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.11.0",
+    "better-sqlite3": "^12.11.1",
+    "dotenv": "^16.4.5",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.0"
+  }
+}
