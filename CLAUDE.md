@@ -32,8 +32,9 @@ biometric data leaves the phone after initial sync.
   `FIELD_INVENTORY.md` from a live account.
 - **Phase 1** — `ZeppApiService.ts` + SQLite persistence: sync, retry/backoff,
   conflict resolution, sync-status observable.
-- **Phase 2** — `BiometricEngine.ts`: VO2 Max (Model A + B), RMSSD, HRR/EPOC, with
-  Jest coverage.
+- **Phase 2** — `BiometricEngine.ts`: VO2 Max (Model A + B), HRR/EPOC, with
+  Jest coverage. (No local RMSSD — Phase 0 found no raw-IBI endpoint; stress
+  is a device-computed passthrough. See SPEC.md Phase 2.)
 - **Phase 3** — UI layer: Continuous Vitals, Sleep Hypnogram, Cadence/Efficiency,
   Insights card.
 - **Phase 4** — Delivery: README, offline verification, final review.
@@ -87,6 +88,14 @@ Agent with `model: opus`); do not assume it happens automatically.
 
 Do not route tasks to Opus models except as the named OAuth-checkpoint refusal
 fallback above.
+
+## Git workflow
+
+Repo: github.com/monis24/amazfit-helio-dashboard (public).
+
+- Commit and push before each phase's Fable 5 checkpoint runs — a clean,
+  pushed snapshot of exactly what's being reviewed.
+- If Fable recommends fixes, implement them, then commit and push again.
 
 ## Build & test
 
