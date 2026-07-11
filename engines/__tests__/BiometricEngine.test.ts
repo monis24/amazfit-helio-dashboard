@@ -135,6 +135,13 @@ describe('vo2MaxModelB', () => {
       expect(result.value.vo2Max).toBeCloseTo(expectedVo2Max, 10);
       expect(result.value.hrExercise).toBeCloseTo(bpm, 10);
       expect(result.value.speedMPerMin).toBeCloseTo(speed, 10);
+
+      // Hardcoded literal (not just a formula-mirror of the code under
+      // test), independently hand-computed and cross-checked by the Phase 2
+      // Fable checkpoint: vo2Cost=33.5, vo2Max=(140/92.5)*30+3.5=48.9054...
+      // This is what actually catches a wrong constant baked into both the
+      // implementation and a same-formula test.
+      expect(result.value.vo2Max).toBeCloseTo(48.90540540540541, 10);
     }
   });
 

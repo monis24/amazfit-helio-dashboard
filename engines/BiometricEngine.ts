@@ -76,6 +76,16 @@ export interface RestingHrResult {
  * before wake time. Candidate window starts are the samples' own timestamps
  * (not a fixed grid) — real minima align with actual readings, and this
  * avoids assuming a specific sampling cadence.
+ *
+ * BIAS NOTE (Phase 2 Fable checkpoint): the minCoverageRatio threshold biases
+ * HR_rest DOWNWARD, not neutrally — because this function takes the MINIMUM
+ * across windows, a sparse under-covered window that happens to catch a
+ * transient low cluster gets counted as a valid "5-minute average" just as
+ * readily as a fully-covered one, and a lower HR_rest inflates VO2max
+ * (15.3 * HR_max/HR_rest). At true minute-cadence data a clean window has
+ * all 5 samples regardless, so this only bites under real sentinel-driven
+ * gaps. If overnight data turns out consistently dense, raising the default
+ * (e.g. to 0.8) would tighten this — a data-driven tuning, not a fix.
  */
 export function computeRestingHr(input: RestingHrInput): EngineResult<RestingHrResult> {
   const searchWindowMinutes = input.searchWindowMinutes ?? 120;
@@ -178,6 +188,15 @@ export interface ModelBResult {
  * expected outcome for indoor/non-GPS workouts, or — right now — any
  * workout, since the account has zero recorded ones) vs. "speed/HR data
  * exists but never stabilizes" — screens should be able to tell these apart.
+ *
+ * Window selection is "first chronologically qualifying window wins," not a
+ * search for the single best (lowest-deviation/longest) candidate among
+ * several that qualify. Confirmed by the Phase 2 Fable checkpoint as
+ * defensible — VO2max is fairly insensitive to which in-band steady window
+ * you pick, since the %HRR≈%VO2R ratio self-normalizes — but untested
+ * against real data (this account has zero recorded workouts). Revisit if a
+ * warm-up-then-settle workout picks a noisier early window over a cleaner
+ * later one.
  */
 export function vo2MaxModelB(input: ModelBInput): EngineResult<ModelBResult> {
   const steadyStateSeconds = input.steadyStateSeconds ?? 180;
@@ -213,7 +232,15 @@ export function vo2MaxModelB(input: ModelBInput): EngineResult<ModelBResult> {
     const hrFraction = bpmMean / input.hrMax;
     if (hrFraction < hrBandLow || hrFraction > hrBandHigh) continue;
 
+    // ACSM RUNNING metabolic equation (0.2*speed + 3.5), level grade -- not
+    // the walking equation (which uses 0.1). Confirmed against ACSM's
+    // Guidelines by the Phase 2 Fable checkpoint: 0.2 is the correct
+    // coefficient for running speeds. Steady-state at 65-85% HR_max is
+    // running intensity, so this is the right equation for this use, but
+    // it's only validated for genuine running speeds (roughly >=134 m/min /
+    // 5mph) -- applying it to walking-speed data would need 0.1, not 0.2.
     const vo2Cost = 0.2 * speedMean + 3.5;
+    // %HRR ~= %VO2R (Swain et al. 1994 / ACSM) extrapolation, VO2_rest=3.5.
     const vo2Max =
       ((input.hrMax - input.hrRest) / (bpmMean - input.hrRest)) * (vo2Cost - 3.5) + 3.5;
 
@@ -242,8 +269,11 @@ export interface HrrInput {
    * Resting HR (Model A's output) — the physiological target "recovery time
    * remaining" counts down to. SPEC.md doesn't name a target explicitly;
    * resting HR is the only value in this project that means "recovered."
-   * This is a real interpretive choice, flagged for the Phase 2 Fable
-   * checkpoint rather than silently assumed.
+   * Confirmed sound by the Phase 2 Fable checkpoint, with one disclosed
+   * bias: overnight resting HR is STRICTER than pre-exercise/standing HR
+   * (the more common clinical convention), so estimates here will run
+   * LONGER than a "return to pre-exercise HR" convention would give. Label
+   * this as "time to resting HR" in the UI, not generic "recovered."
    */
   readonly hrRest: number;
   /** How close a sample must be to the 1-/2-minute marks to count (real streams aren't sampled exactly on the minute). */
@@ -270,6 +300,15 @@ export interface HrrResult {
  * intervals") and a linear-regression recovery slope extrapolated forward to
  * hrRest for an estimated recovery time remaining ("model sympathetic
  * down-regulation slope... to estimate recovery time remaining").
+ *
+ * LINEAR, NOT BI-EXPONENTIAL (confirmed acceptable by the Phase 2 Fable
+ * checkpoint, given SPEC.md literally says "slope"): real HRR decay is
+ * bi-exponential — a steep early parasympathetic-rebound phase that
+ * flattens out. Fitting a straight line through the first 1-2 minutes
+ * captures that steep early portion, so extrapolating it out to hrRest
+ * UNDERESTIMATES recovery time (predicts a faster return than reality).
+ * This improves as more post-exercise data accrues; treat early-workout
+ * estimates as optimistic, not precise.
  */
 export function computeHrr(input: HrrInput): EngineResult<HrrResult> {
   const sampleToleranceSeconds = input.sampleToleranceSeconds ?? 30;
