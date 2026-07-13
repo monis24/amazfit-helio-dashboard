@@ -13,6 +13,7 @@ import { Bar, CartesianChart } from 'victory-native';
 import { useCadencePanel } from '../hooks/useCadencePanel';
 import { todayLocalDate } from '../hooks/localDateRange';
 import { Card } from './Card';
+import { humanizeReason } from './humanizeReason';
 import { StateMessage } from './StateMessage';
 import { colors, spacing } from './theme';
 
@@ -33,7 +34,7 @@ export function CadencePanel(): React.JSX.Element {
       {state.status === 'loading' && <StateMessage text="Loading…" />}
       {state.status === 'error' && <StateMessage text={`Couldn't load cadence data: ${state.message}`} tone="error" />}
       {state.status === 'ready' && state.data.kind === 'insufficient-data' && (
-        <StateMessage text={`No cadence-by-zone data yet (${state.data.reason}).`} />
+        <StateMessage text={`No cadence-by-zone data yet (${humanizeReason(state.data.reason)}).`} />
       )}
       {state.status === 'ready' && state.data.kind === 'ok' && <CadenceZones zones={state.data.value} />}
     </Card>

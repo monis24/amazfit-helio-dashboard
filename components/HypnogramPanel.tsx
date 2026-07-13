@@ -47,7 +47,7 @@ export function HypnogramPanel(): React.JSX.Element {
   const state = useHypnogram(wakeDate);
 
   return (
-    <Card title="Sleep Hypnogram" badge="local">
+    <Card title="Sleep Hypnogram" badge="device-computed">
       {state.status === 'loading' && <StateMessage text="Loading…" />}
       {state.status === 'error' && <StateMessage text={`Couldn't load sleep data: ${state.message}`} tone="error" />}
       {state.status === 'ready' && state.data.session === undefined && (
@@ -103,7 +103,7 @@ function HypnogramContent({
 
       {restlessnessRows.length > 0 && (
         <View>
-          <Text style={styles.subheading}>Restlessness (stage-transition density)</Text>
+          <Text style={styles.subheading}>Restlessness (stage-transition density) — local</Text>
           <View style={{ height: RESTLESSNESS_HEIGHT }}>
             <CartesianChart<RestlessnessRow, 't', 'score'>
               data={restlessnessRows}

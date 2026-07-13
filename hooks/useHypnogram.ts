@@ -27,7 +27,9 @@ const DEFAULT_BUCKET_MINUTES = 15;
 export interface HypnogramSegment {
   readonly startUtc: EpochSeconds;
   readonly endUtc: EpochSeconds;
-  readonly stage: SleepStageMode;
+  /** Undefined for a wire stage code outside the four confirmed values
+   *  (SLEEP_STAGE_LABELS) — genuinely unknown, not coerced to a guess. */
+  readonly stage: SleepStageMode | undefined;
   readonly label: string;
 }
 
@@ -81,7 +83,7 @@ export function useHypnogram(wakeDate: string, bucketMinutes: number = DEFAULT_B
         const segments: HypnogramSegment[] = segmentRows.map((seg) => ({
           startUtc: seg.start_utc,
           endUtc: seg.end_utc,
-          stage: isSleepStageMode(seg.stage) ? seg.stage : 4,
+          stage: isSleepStageMode(seg.stage) ? seg.stage : undefined,
           label: isSleepStageMode(seg.stage) ? SLEEP_STAGE_LABELS[seg.stage] : 'Unknown',
         }));
 

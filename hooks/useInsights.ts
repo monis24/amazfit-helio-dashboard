@@ -98,7 +98,10 @@ export function useInsights(): HookState<InsightsViewModel> {
         const vo2MaxModelA = await resolveVo2MaxModelA(db, source);
 
         const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - STRESS_TREND_WINDOW_DAYS * 86400 * 1000);
+        // (WINDOW_DAYS - 1) back, not WINDOW_DAYS: todayLocalDate(now) is
+        // itself one of the 7 days, so subtracting the full window width
+        // would make the [from, to] range inclusive of 8 calendar dates.
+        const sevenDaysAgo = new Date(now.getTime() - (STRESS_TREND_WINDOW_DAYS - 1) * 86400 * 1000);
         const toDate = todayLocalDate(now);
         const fromDate = todayLocalDate(sevenDaysAgo);
         const stressRows = await getStressDaysInRange(db, fromDate, toDate);

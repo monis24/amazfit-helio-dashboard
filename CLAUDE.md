@@ -81,6 +81,34 @@ this required a newer Node than the Phase 0-2 dev environment had — see
   what that would actually require (a structurally separate ingestion path
   with its own pairing/auth-key flow, not a drop-in second provider).
 
+- **No in-app OAuth login screen (still).** `services/AppSync.ts` (Phase 3's
+  in-app sync trigger, added after the After-Phase-3 Fable checkpoint flagged
+  that nothing previously called `ZeppApiService.syncAll()` from the app)
+  handles a missing token as a distinct, non-crashing 'not signed in' status
+  — it does not, and was not asked to, solve how `ZEPP_APPTOKEN`/
+  `ZEPP_USERID` get into the device's Keychain in the first place. That
+  still requires either a login UI (a real, currently-unscoped feature —
+  Phase 0's OAuth module was deliberately never wired to an in-app redirect
+  flow) or some other one-time bootstrap. Read `AppSync.ts`'s own doc
+  comment before assuming this gap is closed.
+
+- **SpO2 stub panel: deferred, not built.** SPEC.md's Phase 3 section asks
+  to "scaffold data-connected stub panels for any other high-value fields
+  ... (SpO2 trends, training load) pending scope confirmation." SpO2 is
+  ingested (`db/queries/events.ts`'s `spo2_events`/`upsertSpo2Event`, Phase
+  1) but Phase 3 built only the four named panels (Vitals, Hypnogram,
+  Cadence, Insights) and did not add a fifth. Explicitly deferred, not
+  missed — revisit as a scoped decision before Phase 4 sign-off, not a
+  silent gap.
+
+- **Dashboard time windows are fixed at mount, not live.** `VitalsPanel`'s
+  24h window and `CadencePanel`/`HypnogramPanel`'s "today" are computed once
+  per screen mount (`useMemo`/`useState` with no dependency that changes
+  over time) — there's no pull-to-refresh or midnight rollover handling. An
+  app left open across midnight keeps showing the window from when it
+  opened. Acceptable for now; a cheap fix (pull-to-refresh, or a periodic
+  re-mount) is real Phase 4 scope, not a bug to chase down now.
+
 ## Phases
 
 - **Phase 0** — Protocol discovery: OAuth2 service, discovery script, real

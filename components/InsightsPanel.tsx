@@ -13,6 +13,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useInsights } from '../hooks/useInsights';
 import type { EngineResult } from '../engines/BiometricEngine';
 import { Card } from './Card';
+import { humanizeReason } from './humanizeReason';
 import { StateMessage } from './StateMessage';
 import { colors, spacing } from './theme';
 
@@ -77,7 +78,7 @@ function StatRow<T>({
       {result.kind === 'ok' ? (
         <Text style={styles.value}>{format(result.value)}</Text>
       ) : (
-        <Text style={styles.insufficientText}>Insufficient data — {result.reason}</Text>
+        <Text style={styles.insufficientText}>Insufficient data — {humanizeReason(result.reason)}</Text>
       )}
     </View>
   );

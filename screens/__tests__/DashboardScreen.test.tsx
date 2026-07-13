@@ -4,6 +4,7 @@ import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-c
 import { openNodeSqliteDatabase } from '../../db/adapters/NodeSqliteAdapter';
 import { runMigrations } from '../../db/schema';
 import { DatabaseReactContext } from '../../hooks/DatabaseContext';
+import { SyncProvider } from '../../hooks/SyncContext';
 import { DashboardScreen } from '../DashboardScreen';
 import type { SqliteDatabase } from '../../db/Database';
 
@@ -23,7 +24,9 @@ describe('DashboardScreen', () => {
     const { getByText } = await render(
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <DatabaseReactContext.Provider value={db}>
-          <DashboardScreen />
+          <SyncProvider>
+            <DashboardScreen />
+          </SyncProvider>
         </DatabaseReactContext.Provider>
       </SafeAreaProvider>,
     );

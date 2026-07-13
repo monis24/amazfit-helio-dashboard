@@ -43,5 +43,6 @@ jest.mock('victory-native', () => {
     Line: () => null,
     Bar: () => null,
     Scatter: () => null,
+    useChartTransformState: () => ({ state: {} }),
   };
 });

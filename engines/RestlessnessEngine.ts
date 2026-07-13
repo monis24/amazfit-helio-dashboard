@@ -55,9 +55,18 @@ export function restlessnessProxy(
   const sessionStart = (sorted[0] as SleepStageInterval).startUtc;
   const sessionEnd = sorted.reduce((max, seg) => Math.max(max, seg.endUtc), sessionStart);
 
-  // Transitions are every segment boundary after the first segment's own
-  // start (which isn't a transition — there's no prior stage to flip from).
-  const transitionTimes = sorted.slice(1).map((seg) => seg.startUtc);
+  // Transitions are boundaries where the stage actually changes — not every
+  // segment boundary. Nothing upstream guarantees adjacent segments never
+  // share a stage (the wire's raw stage array is stored as-is, never
+  // coalesced), so counting every boundary would overcount whenever that
+  // happens. The first segment's own start is never a transition — there's
+  // no prior stage to flip from.
+  const transitionTimes: EpochSeconds[] = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1] as SleepStageInterval;
+    const curr = sorted[i] as SleepStageInterval;
+    if (curr.stage !== prev.stage) transitionTimes.push(curr.startUtc);
+  }
 
   const bucketSeconds = bucketMinutes * 60;
   const points: RestlessnessPoint[] = [];

@@ -43,6 +43,19 @@ describe('restlessnessProxy', () => {
     expect(result).toEqual([{ t: 0, score: 3 }]);
   });
 
+  it('does not count a boundary between two segments sharing the same stage as a transition', () => {
+    const intervals: SleepStageInterval[] = [
+      { startUtc: 0, endUtc: 300, stage: 4 },
+      { startUtc: 300, endUtc: 600, stage: 4 }, // same stage as previous — not a real transition
+      { startUtc: 600, endUtc: 900, stage: 5 },
+    ];
+    const result = restlessnessProxy(intervals, 10);
+    expect(result).toEqual([
+      { t: 0, score: 0 },
+      { t: 600, score: 1 },
+    ]);
+  });
+
   it('sorts out-of-order input by startUtc before bucketing', () => {
     const intervals: SleepStageInterval[] = [
       { startUtc: 600, endUtc: 1200, stage: 5 },

@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DatabaseProvider } from './hooks/DatabaseContext';
+import { SyncProvider } from './hooks/SyncContext';
 import { DashboardScreen } from './screens/DashboardScreen';
 
 export default function App(): React.JSX.Element {
@@ -11,7 +12,9 @@ export default function App(): React.JSX.Element {
       <SafeAreaProvider>
         <StatusBar style="light" />
         <DatabaseProvider>
-          <DashboardScreen />
+          <SyncProvider>
+            <DashboardScreen />
+          </SyncProvider>
         </DatabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

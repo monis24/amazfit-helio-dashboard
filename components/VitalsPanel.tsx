@@ -3,12 +3,15 @@
  * minute-by-minute HR for the past 24 hours as the primary line, overlaid
  * device-computed stress scatter points on the same time axis. Dual y-axis
  * (bpm ~30-220, stress 0-100) since the two scales aren't comparable —
- * cramming stress onto the HR axis would flatten it near zero.
+ * cramming stress onto the HR axis would flatten it near zero. Zoomable and
+ * pannable per SPEC.md, via Victory Native's transformState (pinch + pan
+ * gestures, composed through GestureHandlerRootView at the app root) — the
+ * chart has no built-in reset gesture, so a tap resets the transform.
  */
 
-import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { CartesianChart, Line, Scatter } from 'victory-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { CartesianChart, Line, Scatter, useChartTransformState } from 'victory-native';
 
 import { useVitalsPanel } from '../hooks/useVitalsPanel';
 import { Card } from './Card';
@@ -34,7 +37,7 @@ export function VitalsPanel(): React.JSX.Element {
   const state = useVitalsPanel(window);
 
   return (
-    <Card title="Continuous Vitals" badge="local + device">
+    <Card title="Continuous Vitals" badge="device">
       {state.status === 'loading' && <StateMessage text="Loading…" />}
       {state.status === 'error' && <StateMessage text={`Couldn't load vitals: ${state.message}`} tone="error" />}
       {state.status === 'ready' && <VitalsChart hrSamples={state.data.hrSamples} stressPoints={state.data.stressPoints} />}
@@ -59,34 +62,55 @@ function VitalsChart({
     return [...byTime.values()].sort((a, b) => a.t - b.t);
   }, [hrSamples, stressPoints]);
 
+  const [resetKey, setResetKey] = useState(0);
+
   if (hrSamples.length === 0) {
     return <StateMessage text="No heart-rate data for the last 24 hours yet." />;
   }
 
   return (
     <View style={{ height: CHART_HEIGHT }}>
-      <CartesianChart<VitalsRow, 't', 'hr' | 'stress'>
-        data={rows}
-        xKey="t"
-        yKeys={['hr', 'stress']}
-        yAxis={[
-          { yKeys: ['hr'], domain: [30, 220] },
-          { yKeys: ['stress'], domain: [0, 100] },
-        ]}
-        axisOptions={{ labelColor: colors.textSecondary, lineColor: colors.cardBorder }}
-      >
-        {({ points }) => (
-          <>
-            <Line points={points.hr} color={colors.accentHr} strokeWidth={2} connectMissingData curveType="linear" />
-            <Scatter points={points.stress} color={colors.accentStress} radius={3} />
-          </>
-        )}
-      </CartesianChart>
+      <ZoomableChart key={resetKey} rows={rows} />
       <View style={styles.legend}>
-        <LegendDot color={colors.accentHr} label="Heart rate (local)" />
+        <LegendDot color={colors.accentHr} label="Heart rate (device)" />
         <LegendDot color={colors.accentStress} label="Stress (device-computed)" />
       </View>
+      <Pressable onPress={() => setResetKey((k) => k + 1)}>
+        <Text style={styles.resetLink}>Reset zoom</Text>
+      </Pressable>
     </View>
+  );
+}
+
+/**
+ * Isolated so its transformState (a fresh Reanimated matrix per mount) can
+ * be reset by remounting via the parent's `key` — Victory Native's
+ * transform matrix has no public reset API, but a fresh
+ * useChartTransformState() call does the same thing.
+ */
+function ZoomableChart({ rows }: { readonly rows: VitalsRow[] }): React.JSX.Element {
+  const { state: transformState } = useChartTransformState();
+
+  return (
+    <CartesianChart<VitalsRow, 't', 'hr' | 'stress'>
+      data={rows}
+      xKey="t"
+      yKeys={['hr', 'stress']}
+      yAxis={[
+        { yKeys: ['hr'], domain: [30, 220] },
+        { yKeys: ['stress'], domain: [0, 100] },
+      ]}
+      axisOptions={{ labelColor: colors.textSecondary, lineColor: colors.cardBorder }}
+      transformState={transformState}
+      transformConfig={{ pan: { dimensions: 'x' } }}
+    >
+      {({ points }) => (
+        <>
+          <Line points={points.hr} color={colors.accentHr} strokeWidth={2} connectMissingData curveType="linear" />
+          <Scatter points={points.stress} color={colors.accentStress} radius={3} />
+        </>
+      )}
+    </CartesianChart>
   );
 }
 
@@ -118,5 +142,10 @@ const styles = StyleSheet.create({
   legendText: {
     color: colors.textSecondary,
     fontSize: 12,
+  },
+  resetLink: {
+    color: colors.accentVo2,
+    fontSize: 12,
+    marginTop: 8,
   },
 });
