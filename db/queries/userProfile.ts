@@ -39,3 +39,9 @@ export interface UserProfileRow {
 export async function getUserProfile(db: SqliteDatabase, userId: string): Promise<UserProfileRow | null> {
   return db.getFirstAsync<UserProfileRow>('SELECT * FROM user_profile WHERE user_id = ?', [userId]);
 }
+
+/** user_profile is a singleton table (one row per locally-synced account) —
+ *  /hooks don't need to already know the userId just to read it back. */
+export async function getSingletonUserProfile(db: SqliteDatabase): Promise<UserProfileRow | null> {
+  return db.getFirstAsync<UserProfileRow>('SELECT * FROM user_profile LIMIT 1');
+}

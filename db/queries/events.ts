@@ -117,3 +117,42 @@ export async function upsertPaiEvent(db: SqliteDatabase, event: PaiEvent, tzOffs
     ],
   );
 }
+
+// ---------------------------------------------------------------------------
+// Phase 3 read-side getters
+// ---------------------------------------------------------------------------
+
+export interface StressDayRow {
+  readonly local_date: string;
+  readonly avg_stress: number | null;
+}
+
+/** Inclusive local_date range — feeds StressTrendEngine.ts's stressSevenDayTrend. */
+export async function getStressDaysInRange(
+  db: SqliteDatabase,
+  fromLocalDate: string,
+  toLocalDate: string,
+): Promise<readonly StressDayRow[]> {
+  return db.getAllAsync<StressDayRow>(
+    `SELECT local_date, avg_stress FROM stress_days
+     WHERE local_date BETWEEN ? AND ? ORDER BY local_date`,
+    [fromLocalDate, toLocalDate],
+  );
+}
+
+export interface StressPointRow {
+  readonly t_ms: number;
+  readonly value: number;
+}
+
+/** Half-open [fromMs, toMs) — feeds the Continuous Vitals Panel's stress overlay. */
+export async function getStressPointsInRange(
+  db: SqliteDatabase,
+  fromMs: number,
+  toMs: number,
+): Promise<readonly StressPointRow[]> {
+  return db.getAllAsync<StressPointRow>(
+    `SELECT t_ms, value FROM stress_points WHERE t_ms >= ? AND t_ms < ? ORDER BY t_ms`,
+    [fromMs, toMs],
+  );
+}

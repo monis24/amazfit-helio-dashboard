@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Amazfit Helio Dashboard",
+    "slug": "amazfit-helio-dashboard",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "amazfit-helio-dashboard",
+    "ios": {
+      "bundleIdentifier": "com.monis24.amazfithelio",
+      "supportsTablet": false
+    },
+    "plugins": ["expo-sqlite"]
+  }
+}

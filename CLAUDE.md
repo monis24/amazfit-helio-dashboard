@@ -12,43 +12,62 @@ biometric data leaves the phone after initial sync.
   `services/TokenStore.ts`), not MMKV — a correctness call from the Phase 0
   OAuth checkpoint, not an oversight. MMKV is for other lightweight UI-level
   key-value state Phase 3 introduces (not yet used — nothing needs it yet).
-- react-native-wagmi-charts / Victory Native for charting — still an open
-  choice between the two, not yet installed; Phase 3 should pick one based
-  on how well each handles the Gantt-style Sleep Hypnogram specifically
-  (the Continuous Vitals line chart and Cadence histogram are easy fits for
-  either).
-- Jest for unit tests (Node-side ts-jest so far; Phase 3 UI/component tests
-  will need `jest-expo` or equivalent, a separate config from the current
-  `jest.config.js`)
+- Victory Native (XL, `victory-native` npm package, Skia-based) for charting
+  — chosen over react-native-wagmi-charts during Phase 3: Victory Native
+  exposes low-level `@shopify/react-native-skia` canvas primitives (Group/
+  Rect/Path via CartesianChart render props), which the Gantt-style Sleep
+  Hypnogram needs for custom stage-segment rectangles (drawn directly with
+  Skia's `Canvas`/`Rect`, not through CartesianChart — see
+  `components/HypnogramPanel.tsx`). wagmi-charts is a fixed set of finance-
+  oriented chart types (Line/Candlestick/Bar) with no equivalent custom-mark
+  escape hatch. The Continuous Vitals line+scatter chart and Cadence
+  histogram use Victory Native's `CartesianChart`/`Line`/`Scatter`/`Bar`
+  directly.
+- Jest for unit tests: Node-side `ts-jest` (`jest.config.js`, /services
+  /engines /db /types /scripts) plus a separate `jest-expo` config
+  (`jest.config.app.js`) for RN component/hook tests under /screens
+  /components /hooks. `npm test` runs both. `jest.setup.app.js` mocks
+  `react-native-safe-area-context`, `@shopify/react-native-skia`, and
+  `victory-native` for the app-side suite — real pixel rendering isn't
+  something Jest exercises (needs canvaskit-wasm + a custom test
+  environment for that); chart rendering is verified on a simulator/device
+  instead.
 
 ## Structure
 
-Built (Phases 0-2):
+Built (Phases 0-3):
 
 ```
 /services   — cloud API ingestion, OAuth2 (ZeppApiService.ts)
-/engines    — local biometric computation (BiometricEngine.ts)
-/db         — SQLite schema and query layer
+/engines    — local biometric computation (BiometricEngine.ts, plus Phase 3's
+              StressTrendEngine.ts / RestlessnessEngine.ts / CadenceEngine.ts)
+/db         — SQLite schema, query layer, and mappers (dayAnchor.ts,
+              hrBlobMapper.ts, sleepStageMapper.ts)
 /types      — strict TypeScript interfaces for all data schemas
 /scripts    — one-off Node/TS scripts, not part of the app bundle (Phase 0 discovery)
-```
-
-Not yet created — Phase 3 deliverables, described here so their intended
-job is settled before they exist:
-
-```
-/screens    — full screen views
-/components — reusable UI components
 /hooks      — orchestration: read /db, call /engines, expose view models to /screens.
               This is where impurity (DB reads, memoization) lives so /engines stays
               100% pure — screens never touch /db or /engines directly.
+              DatabaseContext.tsx opens the on-device SQLite DB once at app
+              startup and hands it to every other hook via context.
+/components — reusable UI components (Card, StateMessage, theme.ts, and the
+              four Phase 3 panels: VitalsPanel, HypnogramPanel, CadencePanel,
+              InsightsPanel)
+/screens    — DashboardScreen.tsx: single scrollable screen composing the
+              four panels as cards (SwiftUI-inspired dashboard, not a
+              multi-screen nav stack — SPEC.md's Phase 3 section describes
+              one dashboard view, not separate screens per panel)
 ```
 
-Also not yet done, and part of Phase 3's real scope even though SPEC.md
-doesn't spell it out as a separate line item: there is no Expo app shell
-yet — no entry point, no `react`/`react-native`/`expo` app-level deps, no
-charting library installed, `tsconfig.json`/`jest.config.js` are still
-Node-side-only. Phase 3 starts with scaffolding the app, not with panel 1.
+The Expo app shell now exists: `App.tsx`/`index.ts` entry point, `app.json`,
+`babel.config.js`, `metro.config.js`, `react`/`react-native`/`expo` as direct
+deps, `tsconfig.json` extended with `jsx` + the app dirs. `ios/`/`android/`
+are Expo continuous-native-generation output (`npx expo prebuild`, gitignored
+— fully regenerable, never hand-edited; see `.gitignore`'s comment). Building
+this required a newer Node than the Phase 0-2 dev environment had — see
+`.nvmrc` (24.18.0) — and, for an actual simulator run, Xcode 26 + CocoaPods
+(neither was present at the start of Phase 3; installing CocoaPods needs
+`sudo xcodebuild -license` accepted first, an interactive step).
 
 ## Architecture notes
 
@@ -72,7 +91,9 @@ Node-side-only. Phase 3 starts with scaffolding the app, not with panel 1.
   Jest coverage. (No local RMSSD — Phase 0 found no raw-IBI endpoint; stress
   is a device-computed passthrough. See SPEC.md Phase 2.)
 - **Phase 3** — UI layer: Continuous Vitals, Sleep Hypnogram, Cadence/Efficiency,
-  Insights card.
+  Insights card. Built and verified end-to-end on an iOS simulator (real
+  charts rendering off synthetic data, not just Jest); After-Phase-3 Fable 5
+  checkpoint per Model routing below still pending.
 - **Phase 4** — Delivery: README, offline verification, final review.
 
 Do not start a phase until the prior one is reviewed (see Model routing below).
@@ -138,15 +159,21 @@ Repo: github.com/monis24/amazfit-helio-dashboard (public).
 
 ## Build & test
 
-- Test: `npx jest` (or `npm test`)
+- Test: `npm test` runs both `npx jest` (Node-side) and
+  `npx jest --config jest.config.app.js` (RN component/hook tests). Run just
+  one directly with either command.
 - Lint: `npx eslint .` (or `npm run lint`) — ESLint 9 + typescript-eslint,
   flat config in `eslint.config.js`. Pinned to ESLint 9, not 10: ESLint 10
-  requires a newer Node than this environment has and crashes formatting
-  any actual output (works fine, silently, only when there's nothing to
-  report — a real trap if the version drifts back up).
+  requires a newer Node than the Phase 0-2 dev environment had and crashes
+  formatting any actual output (works fine, silently, only when there's
+  nothing to report — a real trap if the version drifts back up). Phase 3's
+  Node bump (`.nvmrc`, 24.18.0) likely lifts this constraint but it hasn't
+  been re-tested against ESLint 10 — don't drift the version without
+  checking.
 - Type-check: `npx tsc --noEmit` (or `npm run typecheck`)
-- Dev server: `npx expo start` — not usable yet, no Expo app entry point
-  exists (see Structure above). Becomes real once Phase 3 scaffolds the app.
+- Dev server: `npx expo start` (or `npm start`) — real now; requires the
+  Node version in `.nvmrc`. `npx expo run:ios` builds and launches on a
+  simulator (needs Xcode + CocoaPods — see Structure above).
 
 ## Style
 

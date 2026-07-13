@@ -4,3 +4,11 @@ node_modules/
 scripts/discovery-output/
 data/
 .claude/settings.local.json
+
+# Phase 3: Expo continuous native generation output — fully regenerable via
+# `npx expo prebuild`, not hand-edited. Committing it would add an
+# unreviewable native-project diff for zero custom native code.
+ios/
+android/
+.expo/
+dist/

@@ -178,3 +178,118 @@ export async function upsertActivitySummary(db: SqliteDatabase, record: BandData
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// Phase 3 read-side getters — /hooks reads through these rather than issuing
+// raw SQL itself, keeping table shape knowledge inside /db per CLAUDE.md's
+// Structure section.
+// ---------------------------------------------------------------------------
+
+/**
+ * Borrows the most recently synced band_data record's `source` — the same
+ * "most recent row wins" pattern ZeppApiService.ts's currentTzOffsetSec
+ * already uses for tz_offset_sec. This account has one real device, so
+ * there's no source-selection UI to build; /hooks resolve it themselves
+ * rather than pushing a source id onto every panel's call site. Null only
+ * for a fresh, never-synced database.
+ */
+export async function getLatestSource(db: SqliteDatabase): Promise<number | null> {
+  const row = await db.getFirstAsync<{ source: number }>('SELECT source FROM hr_days ORDER BY local_date DESC LIMIT 1');
+  return row?.source ?? null;
+}
+
+export interface HrDayRow {
+  readonly local_date: string;
+  readonly source: number;
+  readonly tz_offset_sec: number;
+  readonly hr_minutes: Uint8Array;
+}
+
+/** Inclusive local_date range, for splicing a UTC time window across day
+ *  boundaries — the caller doesn't yet know which calendar day(s) a UTC
+ *  window falls into until each row's own tz_offset_sec is read back. */
+export async function getHrDaysInRange(
+  db: SqliteDatabase,
+  fromLocalDate: string,
+  toLocalDate: string,
+  source: number,
+): Promise<readonly HrDayRow[]> {
+  return db.getAllAsync<HrDayRow>(
+    `SELECT local_date, source, tz_offset_sec, hr_minutes FROM hr_days
+     WHERE source = ? AND local_date BETWEEN ? AND ? ORDER BY local_date`,
+    [source, fromLocalDate, toLocalDate],
+  );
+}
+
+export interface SleepSessionRow {
+  readonly local_date: string;
+  readonly source: number;
+  readonly start_utc: number;
+  readonly end_utc: number;
+  readonly light_min: number;
+  readonly deep_min: number;
+  readonly rem_min: number;
+  readonly awake_min: number;
+  readonly resting_hr: number | null;
+}
+
+/** `localDate` here is the session's own wake date (sleep_sessions'
+ *  primary key), not a UTC day — matches upsertSleepSummary's own keying. */
+export async function getSleepSession(
+  db: SqliteDatabase,
+  localDate: string,
+  source: number,
+): Promise<SleepSessionRow | null> {
+  return db.getFirstAsync<SleepSessionRow>(
+    `SELECT local_date, source, start_utc, end_utc, light_min, deep_min, rem_min, awake_min, resting_hr
+     FROM sleep_sessions WHERE local_date = ? AND source = ?`,
+    [localDate, source],
+  );
+}
+
+/** Most recent session for this source — feeds Model A's overnight scan,
+ *  which needs "the last sleep session," not a caller-known wake date. */
+export async function getMostRecentSleepSession(db: SqliteDatabase, source: number): Promise<SleepSessionRow | null> {
+  return db.getFirstAsync<SleepSessionRow>(
+    `SELECT local_date, source, start_utc, end_utc, light_min, deep_min, rem_min, awake_min, resting_hr
+     FROM sleep_sessions WHERE source = ? ORDER BY local_date DESC LIMIT 1`,
+    [source],
+  );
+}
+
+export interface SleepStageSegmentRow {
+  readonly start_utc: number;
+  readonly end_utc: number;
+  readonly stage: number;
+}
+
+export async function getSleepStageSegments(
+  db: SqliteDatabase,
+  localDate: string,
+  source: number,
+): Promise<readonly SleepStageSegmentRow[]> {
+  return db.getAllAsync<SleepStageSegmentRow>(
+    `SELECT start_utc, end_utc, stage FROM sleep_stage_segments
+     WHERE local_date = ? AND source = ? ORDER BY start_utc`,
+    [localDate, source],
+  );
+}
+
+export interface StepSegmentRow {
+  readonly start_utc: number;
+  readonly end_utc: number;
+  readonly mode: number;
+  readonly steps: number;
+}
+
+export async function getStepSegments(
+  db: SqliteDatabase,
+  localDate: string,
+  source: number,
+): Promise<readonly StepSegmentRow[]> {
+  return db.getAllAsync<StepSegmentRow>(
+    `SELECT start_utc, end_utc, mode, steps FROM step_segments
+     WHERE local_date = ? AND source = ? ORDER BY start_utc`,
+    [localDate, source],
+  );
+}

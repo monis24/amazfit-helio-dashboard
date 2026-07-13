@@ -44,3 +44,18 @@ export async function upsertWorkoutDetail(db: SqliteDatabase, trackId: string, r
     [trackId, JSON.stringify(rawDetail)],
   );
 }
+
+/**
+ * Existence check only — deliberately not a row-shaped getter. workout_
+ * summaries has no populated start_utc/end-time column yet (upsertWorkoutSummary
+ * above doesn't write one, and there's no duration column at all), and
+ * workout_details.raw_detail is an unparsed, never-live-verified wire shape
+ * (see this file's top comment and SPEC.md's live blocker). useInsights()
+ * uses this to gate vo2MaxModelB/computeHrr on "has a workout ever been
+ * recorded" without pretending a real WorkoutStreamSample[] can be built
+ * from what's actually stored today.
+ */
+export async function hasAnyWorkout(db: SqliteDatabase): Promise<boolean> {
+  const row = await db.getFirstAsync<{ track_id: string }>('SELECT track_id FROM workout_summaries LIMIT 1');
+  return row !== null;
+}

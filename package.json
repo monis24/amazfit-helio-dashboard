@@ -2,25 +2,39 @@
   "name": "amazfit-helio-dashboard",
   "version": "0.0.1",
   "private": true,
+  "main": "index.ts",
   "scripts": {
     "discover": "tsx scripts/discover.ts",
     "sync-once": "tsx scripts/sync-once.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "jest"
+    "test": "jest && jest --config jest.config.app.js",
+    "start": "expo start"
   },
   "dependencies": {
+    "@shopify/react-native-skia": "2.6.9",
+    "expo": "57.0.4",
     "expo-secure-store": "^57.0.0",
-    "expo-sqlite": "^57.0.0"
+    "expo-sqlite": "^57.0.0",
+    "expo-status-bar": "57.0.0",
+    "react": "19.2.7",
+    "react-native": "0.86.0",
+    "react-native-gesture-handler": "3.0.2",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.8.0",
+    "victory-native": "41.26.0"
   },
   "devDependencies": {
+    "@testing-library/react-native": "14.0.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.11.0",
+    "@types/react": "^19.2.0",
     "better-sqlite3": "^12.11.1",
     "dotenv": "^16.4.5",
     "eslint": "^9.39.5",
     "jest": "^30.4.2",
+    "jest-expo": "~57.0.0",
     "ts-jest": "^29.4.11",
     "tsx": "^4.7.1",
     "typescript": "^5.4.0",
