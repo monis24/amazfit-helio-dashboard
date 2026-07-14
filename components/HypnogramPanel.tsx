@@ -23,8 +23,10 @@ import { Bar, CartesianChart } from 'victory-native';
 import { useHypnogram, type HypnogramSegment } from '../hooks/useHypnogram';
 import { todayLocalDate } from '../hooks/localDateRange';
 import { Card } from './Card';
+import { formatClockLabel } from './chartTimeFormat';
 import { StateMessage } from './StateMessage';
 import { colors, spacing } from './theme';
+import { useChartFont } from './useChartFont';
 
 const GANTT_HEIGHT = 36;
 const RESTLESSNESS_HEIGHT = 90;
@@ -75,6 +77,7 @@ function HypnogramContent({
 }): React.JSX.Element {
   const [canvasWidth, setCanvasWidth] = useState(0);
   const totalDuration = session.endUtc - session.startUtc;
+  const font = useChartFont();
 
   const restlessnessRows: RestlessnessRow[] = restlessness.map((p) => ({ t: p.t, score: p.score }));
 
@@ -110,7 +113,7 @@ function HypnogramContent({
               xKey="t"
               yKeys={['score']}
               domainPadding={{ left: 10, right: 10, top: 10 }}
-              axisOptions={{ labelColor: colors.textSecondary, lineColor: colors.cardBorder }}
+              axisOptions={{ font, labelColor: colors.textSecondary, lineColor: colors.cardBorder, formatXLabel: formatClockLabel }}
             >
               {({ points, chartBounds }) => (
                 <Bar points={points.score} chartBounds={chartBounds} color={colors.accentRem} roundedCorners={{ topLeft: 2, topRight: 2 }} />

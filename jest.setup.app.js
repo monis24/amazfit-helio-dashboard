@@ -2,6 +2,23 @@ jest.mock('react-native-safe-area-context', () =>
   require('react-native-safe-area-context/jest/mock').default,
 );
 
+require('react-native-gesture-handler/jestSetup');
+
+// Reanimated's worklets need real native JSI setup unavailable under Jest.
+// Its own shipped mock (react-native-reanimated/mock) still pulls in the
+// same native worklets init chain in this version (4.5.1, split into a
+// separate react-native-worklets package) and fails the same way — so this
+// is a minimal hand-rolled mock instead. The only reanimated API this app's
+// own code calls directly is runOnJS (MetricDetailScreen.tsx's swipe
+// gesture); victory-native's use of reanimated is already covered by the
+// wholesale victory-native mock below.
+jest.mock('react-native-reanimated', () => ({
+  runOnJS:
+    (fn) =>
+    (...args) =>
+      fn(...args),
+}));
+
 // @shopify/react-native-skia's real jest setup needs canvaskit-wasm + a
 // custom TestEnvironment (see its own jestEnv.js) to actually rasterize —
 // real pixel output isn't something these component tests need or exercise;
@@ -22,6 +39,7 @@ jest.mock('@shopify/react-native-skia', () => {
     RoundedRect: () => null,
     Group: ({ children }) => React.createElement(View, null, children),
     Path: () => null,
+    matchFont: () => ({ getSize: () => 11 }),
   };
 });
 

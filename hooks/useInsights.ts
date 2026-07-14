@@ -12,13 +12,10 @@ import { useEffect, useState } from 'react';
 
 import { getHrDaysInRange, getLatestSource, getMostRecentSleepSession } from '../db/queries/bandData';
 import { getStressDaysInRange } from '../db/queries/events';
-import { getSingletonUserProfile } from '../db/queries/userProfile';
 import { hasAnyWorkout } from '../db/queries/workouts';
 import { hrDayRowToMapping, mapHrDaysToSamplesInRange } from '../db/mappers/hrBlobMapper';
-import { ageFromBirthday } from '../types/ZeppApiSchemas';
 import {
   computeRestingHr,
-  gellishHrMax,
   vo2MaxModelA as computeVo2MaxModelA,
   type EngineResult,
   type HrrResult,
@@ -27,6 +24,7 @@ import { stressSevenDayTrend, type StressTrendResult } from '../engines/StressTr
 import type { SqliteDatabase } from '../db/Database';
 import { useDatabase } from './DatabaseContext';
 import { paddedLocalDateRange, todayLocalDate } from './localDateRange';
+import { resolveHrMax } from './resolveHrMax';
 import { errorState, LOADING, type HookState } from './asyncState';
 
 /** SPEC.md's Model A: "final 120 minutes of sleep." Padded so the fetched
@@ -124,9 +122,9 @@ export function useInsights(): HookState<InsightsViewModel> {
 }
 
 async function resolveVo2MaxModelA(db: SqliteDatabase, source: number): Promise<EngineResult<Vo2ModelAResult>> {
-  const profile = await getSingletonUserProfile(db);
-  if (profile === null) {
-    return { kind: 'insufficient-data', reason: 'no user profile synced yet (age is required for HR_max)' };
+  const hrMaxResult = await resolveHrMax(db);
+  if (hrMaxResult.kind === 'insufficient-data') {
+    return hrMaxResult;
   }
 
   const session = await getMostRecentSleepSession(db, source);
@@ -145,9 +143,7 @@ async function resolveVo2MaxModelA(db: SqliteDatabase, source: number): Promise<
     return restingResult;
   }
 
-  const age = ageFromBirthday(profile.birthday);
-  const hrMax = gellishHrMax(age);
-  const vo2Max = computeVo2MaxModelA(hrMax, restingResult.value.hrRest);
+  const vo2Max = computeVo2MaxModelA(hrMaxResult.value, restingResult.value.hrRest);
 
   return { kind: 'ok', value: { vo2Max, hrRest: restingResult.value.hrRest } };
 }

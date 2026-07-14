@@ -11,9 +11,23 @@ export const colors = {
   cardBorder: '#2A2A32',
   textPrimary: '#F5F5F7',
   textSecondary: '#9A9AA5',
-  accentHr: '#FF5A5F',
-  accentStress: '#F2B705',
   accentVo2: '#4FD1C5',
+  // Stress band colors — match the Zepp app's own convention (0-39 relaxed,
+  // 40-59 normal, 60-79 medium, 80-100 high), not an invented palette.
+  stressRelaxed: '#29ABE2',
+  stressNormal: '#1BC47D',
+  stressMedium: '#F5A623',
+  stressHigh: '#F0552A',
+  // HR zone colors — Zepp's own "Heart Rate Zone" names (Light/Intensive/
+  // Aerobic/Anaerobic/VO2 Max); Light/Aerobic/Intensive match its visible
+  // purple/green/blue bars, Anaerobic/VO2 Max fill in the warm end of the
+  // progression (that screen's own bars were empty/colorless at 0%).
+  hrResting: '#5B7A94',
+  hrLight: '#9B59D0',
+  hrIntensive: '#4A90D9',
+  hrAerobic: '#2FA86B',
+  hrAnaerobic: '#F5A623',
+  hrVo2Max: '#E74C3C',
   accentDeep: '#5B6EF5',
   accentLight: '#8AA4F8',
   accentRem: '#C88AF8',

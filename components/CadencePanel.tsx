@@ -16,6 +16,7 @@ import { Card } from './Card';
 import { humanizeReason } from './humanizeReason';
 import { StateMessage } from './StateMessage';
 import { colors, spacing } from './theme';
+import { useChartFont } from './useChartFont';
 
 const ZONE_CHART_HEIGHT = 90;
 
@@ -66,6 +67,7 @@ function ZoneBarChart({
     () => buckets.map((b) => ({ stepsPerMin: b.stepsPerMin, minutes: b.minutes })),
     [buckets],
   );
+  const font = useChartFont();
 
   return (
     <View style={styles.zoneRow}>
@@ -76,7 +78,7 @@ function ZoneBarChart({
           xKey="stepsPerMin"
           yKeys={['minutes']}
           domainPadding={{ left: 20, right: 20 }}
-          axisOptions={{ labelColor: colors.textSecondary, lineColor: colors.cardBorder }}
+          axisOptions={{ font, labelColor: colors.textSecondary, lineColor: colors.cardBorder }}
         >
           {({ points, chartBounds }) => (
             <Bar points={points.minutes} chartBounds={chartBounds} color={colors.accentVo2} roundedCorners={{ topLeft: 4, topRight: 4 }} />

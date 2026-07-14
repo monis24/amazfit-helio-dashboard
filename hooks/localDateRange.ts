@@ -41,3 +41,30 @@ export function todayLocalDate(now: Date = new Date()): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+function parseLocalDate(dateStr: string): { readonly year: number; readonly month: number; readonly day: number } {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return { year: year as number, month: month as number, day: day as number };
+}
+
+/**
+ * The UTC epoch-seconds window spanning one full local calendar day (local
+ * midnight to the next local midnight, device-local timezone) — the
+ * detail-screen equivalent of todayLocalDate's "what day is it" for "give
+ * me this whole day's data," for an arbitrary (not necessarily today) date.
+ */
+export function localDayWindow(dateStr: string): { readonly fromUtc: number; readonly toUtc: number } {
+  const { year, month, day } = parseLocalDate(dateStr);
+  const fromUtc = new Date(year, month - 1, day, 0, 0, 0).getTime() / 1000;
+  const toUtc = new Date(year, month - 1, day + 1, 0, 0, 0).getTime() / 1000;
+  return { fromUtc, toUtc };
+}
+
+/** Shifts a YYYY-MM-DD local-date string by `deltaDays` — used for
+ *  swipe-to-previous/next-day paging on the metric detail screen. Goes
+ *  through Date's local constructor/getters (not string math) so month/year
+ *  rollovers and DST are handled correctly. */
+export function shiftLocalDate(dateStr: string, deltaDays: number): string {
+  const { year, month, day } = parseLocalDate(dateStr);
+  return todayLocalDate(new Date(year, month - 1, day + deltaDays));
+}

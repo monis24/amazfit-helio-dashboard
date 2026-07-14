@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { openNodeSqliteDatabase } from '../../db/adapters/NodeSqliteAdapter';
@@ -25,7 +26,9 @@ describe('DashboardScreen', () => {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <DatabaseReactContext.Provider value={db}>
           <SyncProvider>
-            <DashboardScreen />
+            <NavigationContainer>
+              <DashboardScreen />
+            </NavigationContainer>
           </SyncProvider>
         </DatabaseReactContext.Provider>
       </SafeAreaProvider>,
