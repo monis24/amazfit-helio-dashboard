@@ -168,7 +168,26 @@ not default to max effort as standing policy):
   zoom/pan), a labeling-rule violation, and a few small correctness bugs.
   All fixed and pushed; see git history around this line for the pass that
   applied them.
-- **Before Phase 4 delivery:** end-to-end review of the full codebase.
+- **Before Phase 4 delivery:** end-to-end review of the full codebase. Done:
+  found and fixed a real bug (`stressBands.ts`'s band matcher was defined on
+  integer scores but `StressChart` passes fractional bucket averages, so
+  values between two band boundaries like 39.5 fell through to the 'high'
+  fallback — coloring relaxed-ish readings with the worst-possible color;
+  fixed by rounding onto the integer scale before matching, regression-
+  covered in `components/__tests__/stressBands.test.ts`). Also confirmed all
+  of CLAUDE.md's documented deliberate gaps (no OAuth login UI, no SpO2
+  panel, non-live dashboard windows, no local RMSSD) are still genuinely
+  true and low-risk, and re-verified the formula/timezone-handling code
+  against SPEC.md with no further issues. Flagged, not fixed (real Phase 4
+  scope): sync watermarks are written but never read back (every sync
+  refetches a fixed 3-day window regardless of what's already synced —
+  `db/queries/syncState.ts`'s `getWatermark` has zero production callers);
+  `sport_run_detail` (workout detail) is never fetched, only
+  `sport_run_history` summaries, so `workout_details` stays empty even once
+  a real workout exists; `AppSync.ts`'s `syncAll` ends on `setDone` even
+  when a per-endpoint `setError` fired mid-sync, so the sync-status banner
+  can undercount failures. A handful of dead exports (`getUserProfile`,
+  `CURRENT_SCHEMA_VERSION`) were also noted but are harmless and not fixed.
 
 **Known risk:** the OAuth checkpoint touches auth-token extraction from a
 third-party API — cyber-adjacent content that can trigger Fable 5's safety
