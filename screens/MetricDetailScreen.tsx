@@ -22,7 +22,6 @@ import { colors, spacing } from '../components/theme';
 import type { RootStackParamList } from '../navigation/types';
 
 const SWIPE_THRESHOLD_PX = 60;
-const ONE_DAY_SECONDS = 86400;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MetricDetail'>;
 
@@ -65,11 +64,11 @@ export function MetricDetailScreen({ route, navigation }: Props): React.JSX.Elem
             <HrChart
               samples={state.data.hrSamples}
               hrMax={hrMaxState.status === 'ready' && hrMaxState.data.kind === 'ok' ? hrMaxState.data.value : undefined}
-              windowSeconds={ONE_DAY_SECONDS}
+              window={window}
               height={320}
             />
           )}
-          {state.status === 'ready' && metric === 'stress' && <StressChart points={state.data.stressPoints} height={320} />}
+          {state.status === 'ready' && metric === 'stress' && <StressChart points={state.data.stressPoints} window={window} height={320} />}
         </View>
         <Text style={styles.swipeHint}>Swipe for the previous/next day</Text>
       </View>

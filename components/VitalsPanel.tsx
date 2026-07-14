@@ -51,7 +51,7 @@ export function VitalsPanel(): React.JSX.Element {
             <HrChart
               samples={state.data.hrSamples}
               hrMax={hrMaxState.status === 'ready' && hrMaxState.data.kind === 'ok' ? hrMaxState.data.value : undefined}
-              windowSeconds={PREVIEW_WINDOW_HOURS * 3600}
+              window={window}
               height={PREVIEW_CHART_HEIGHT}
               showLegend={false}
             />
@@ -59,6 +59,7 @@ export function VitalsPanel(): React.JSX.Element {
           <Pressable style={styles.block} onPress={() => openDetail('stress')}>
             <StressChart
               points={state.data.stressPoints}
+              window={window}
               height={PREVIEW_CHART_HEIGHT}
               showLegend={false}
               emptyMessage={`No stress data for the last ${PREVIEW_WINDOW_HOURS} hours yet.`}
