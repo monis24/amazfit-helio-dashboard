@@ -120,8 +120,8 @@ this required a newer Node than the Phase 0-2 dev environment had — see
   is a device-computed passthrough. See SPEC.md Phase 2.)
 - **Phase 3** — UI layer: Continuous Vitals, Sleep Hypnogram, Cadence/Efficiency,
   Insights card. Built and verified end-to-end on an iOS simulator (real
-  charts rendering off synthetic data, not just Jest); After-Phase-3 Fable 5
-  checkpoint per Model routing below still pending.
+  charts rendering off synthetic data, not just Jest). After-Phase-3 Fable 5
+  checkpoint done — findings applied (see Model routing below).
 - **Phase 4** — Delivery: README, offline verification, final review.
 
 Do not start a phase until the prior one is reviewed (see Model routing below).
@@ -162,7 +162,12 @@ not default to max effort as standing policy):
   catch integration drift early rather than only at final sign-off. Done for
   Phase 1 and Phase 2 (Phase 2's is separate from the During-Phase-2 formula
   checkpoint above — that one only checks VO2 Max/HRR math, this one checks
-  the phase against the plan more broadly). Still pending for Phase 3.
+  the phase against the plan more broadly). Done for Phase 3 too: found a
+  real integration gap (no in-app sync trigger — Phase 1's sync/observable
+  had zero callers from the app), a dropped SPEC requirement (Vitals
+  zoom/pan), a labeling-rule violation, and a few small correctness bugs.
+  All fixed and pushed; see git history around this line for the pass that
+  applied them.
 - **Before Phase 4 delivery:** end-to-end review of the full codebase.
 
 **Known risk:** the OAuth checkpoint touches auth-token extraction from a
