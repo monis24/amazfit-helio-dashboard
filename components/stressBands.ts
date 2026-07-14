@@ -23,5 +23,16 @@ export const STRESS_BANDS: readonly StressBandDef[] = [
 ];
 
 export function stressBandFor(value: number): StressBandDef {
-  return STRESS_BANDS.find((b) => value >= b.min && value <= b.max) ?? (STRESS_BANDS[STRESS_BANDS.length - 1] as StressBandDef);
+  // The Zepp bands are defined on the integer score scale (0-39, 40-59, ...),
+  // but StressChart passes bucketed AVERAGES, which are fractional — a raw
+  // 39.5 sits between relaxed's max (39) and normal's min (40), missed every
+  // band, and fell through to the 'high' fallback (worst-possible color for
+  // a relaxed-ish reading). Round back onto the integer scale the bands are
+  // defined on before matching; the fallback now only catches out-of-scale
+  // values (> 100), for which 'high' is the honest clamp.
+  const rounded = Math.round(value);
+  return (
+    STRESS_BANDS.find((b) => rounded >= b.min && rounded <= b.max) ??
+    (STRESS_BANDS[STRESS_BANDS.length - 1] as StressBandDef)
+  );
 }
